@@ -89,16 +89,23 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
+            - name: dev-dir
+              mountPath: /dev
             - name: config
               mountPath: /config
             - name: mount-dir
               mountPath: /mnt/pods
               mountPropagation: Bidirectional
+
       volumes:
         - name: socket-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry/com.open-e.joviandss.csi
             type: DirectoryOrCreate
+        - name: dev-dir
+          hostPath:
+            path: /dev
+            type: Directory
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry/
@@ -110,3 +117,4 @@ spec:
         - name: config
           secret:
             secretName: jdss-node-cfg 
+
