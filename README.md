@@ -6,13 +6,13 @@
 
 ### Configuring
 
-Plugin has 2 config files. Controller and node configs. Controller is responsible for a management of particular volumes on JoviadDSS storage. When nodes responsibility is limited to connecting particular volume to particular host. Configuration file examples can be found in 'deploy/cfg/' folder.
+Plugin has 2 config files. Controller and node configs. Controller is responsible for a management of particular volumes on JovianDSS storage. When nodes responsibility is limited to connecting particular volume to particular host. Configuration file examples can be found in 'deploy/cfg/' folder.
 
  - **llevel** the logging level of the plugin
 
  - **plugins** specify the services that should be run in the plugin.
     Possible values: *IDENTITY_SERVICE*, *CONTROLLER_SERVICE*, *NODE_SERVICE*
-    + **IDENTITY_SERVICE** - starts identiry service, expected to run on each physical node with plugin
+    + **IDENTITY_SERVICE** - starts identity service, expected to run on each physical node with plugin
     + **CONTROLLER_SERVICE** - starts controller service, cluster should have only one instance of this service in running at a time
     + **NODE_SERVICE** - starts node service, this service is responsible for attaching physical volumes stored on JovianDSS
         This service should be running on every physical host that is expected to have containers with such feature.
@@ -20,7 +20,7 @@ Plugin has 2 config files. Controller and node configs. Controller is responsibl
     + **name** - name of JovianDSS storage, not used at the moment
     + **addr** - ip address of JovianDSS storage
     + **port** - port of JovianDSS storage, the port that is asigned to REST interface
-    + **user** - user to execure REST requests
+    + **user** - user to execute REST requests
     + **pass** - password for the user specified above
     + **prot** - protocol that is gona be used for sending REST
     + **pool** - name of the pool created on JovianDSS
