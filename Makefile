@@ -11,17 +11,12 @@ default: joviandss
 	
 all:  joviandss container-container rest
 
-
-test:
-	go test open-e-csi-kubernetes/pkg/... -cover
-	go vet open-e-csi-kubernetes/pkg/...
-
 rest:
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o _output/rest ./app/rest
 
 joviandss: rest
 
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-X open-e-csi-kubernetes/pkg/joviandss.Version=$(REV) -extldflags "-static"' -o _output/jdss-csi-plugin ./app/joviandssplugin
+	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-X JovianDSS-KubernetesCSI/pkg/joviandss.Version=$(REV) -extldflags "-static"' -o _output/jdss-csi-plugin ./app/joviandssplugin
 
 joviandss-container: joviandss
 	@echo Building Container

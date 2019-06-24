@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 
-	"open-e-csi-kubernetes/pkg/rest"
+	"JovianDSS-KubernetesCSI/pkg/rest"
 )
 
 func init() {
