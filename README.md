@@ -1,7 +1,5 @@
 # Open-E JovianDSS Kubernetes CSI plugin
 
-## Source code is comming
-
 ## Deployment
 
 ### Configuring
