@@ -87,7 +87,7 @@ func (s *Storage) VolumeExists(vname string) (bool, error) {
 	})
 
 	l.Trace("Get Existing volumes")
-	addr := fmt.Sprintf("api/v2/pools/%s/volumes/%s", s.pool, vname)
+	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s", s.pool, vname)
 
 	stat, _, _ := s.rp.Send("GET", addr, nil, GetVolumeRCode)
 
@@ -103,7 +103,7 @@ func (s *Storage) GetVolume(vname string) (*Volume, RestError) {
 		"func": "GetVolume",
 	})
 
-	addr := fmt.Sprintf("api/v2/pools/%s/volumes/%s", s.pool, vname)
+	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s", s.pool, vname)
 
 	stat, body, err := s.rp.Send("GET", addr, nil, GetVolumeRCode)
 
@@ -147,7 +147,7 @@ func (s *Storage) CreateVolume(vdesc CreateVolumeDescriptor) RestError {
 		Name: vdesc.Name,
 		Size: fmt.Sprintf("%d", vdesc.Size)}
 
-	addr := fmt.Sprintf("api/v2/pools/%s/volumes", s.pool)
+	addr := fmt.Sprintf("api/v3/pools/%s/volumes", s.pool)
 
 	stat, body, err := s.rp.Send("POST", addr, data, CreateVolumeRCode)
 
@@ -355,7 +355,7 @@ func (s *Storage) CreateSnapshot(vname string, sname string) RestError {
 	data := CreateSnapshot{
 		Snapshot_name: sname}
 
-	addr := fmt.Sprintf("api/v2/pools/%s/volumes/%s/snapshots", s.pool, vname)
+	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s/snapshots", s.pool, vname)
 
 	l.Trace("Addr: %s", addr)
 	stat, body, err := s.rp.Send("POST", addr, data, CreateSnapshotRCode)
@@ -608,7 +608,7 @@ func (s *Storage) CreateClone(vname string, sname string, cname string) RestErro
 		Name:     cname,
 		Snapshot: sname,
 	}
-	addr := fmt.Sprintf("api/v2/pools/%s/volumes/%s/clone", s.pool, vname)
+	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s/clone", s.pool, vname)
 
 	l.Trace("Creating clone of snapshot %s  volume: %s", sname, vname)
 	stat, body, err := s.rp.Send("POST", addr, data, CreateCloneRCode)
@@ -770,7 +770,7 @@ func (s *Storage) CreateTarget(tname string) RestError {
 		IncomingUsersActive: true,
 	}
 
-	addr := fmt.Sprintf("api/v2/pools/%s/san/iscsi/targets", s.pool)
+	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets", s.pool)
 
 	l.Trace(fmt.Sprintf("Creating targets for volume: %s", tname))
 	stat, body, err := s.rp.Send("POST", addr, data, CreateTargetRCode)
@@ -820,7 +820,7 @@ func (s *Storage) DeleteTarget(tname string) RestError {
 		"func": "CreateTarget",
 	})
 
-	addr := fmt.Sprintf("api/v2/pools/%s/san/iscsi/targets/%s", s.pool, tname)
+	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s", s.pool, tname)
 
 	l.Trace("Deleating targets for volume: %s", tname)
 	stat, body, err := s.rp.Send("DELETE", addr, nil, DeleteTargetRCode)
@@ -886,7 +886,7 @@ func (s *Storage) AttachToTarget(tname string,
 		Mode: "wt",
 	}
 
-	addr := fmt.Sprintf("api/v2/pools/%s/san/iscsi/targets/%s/luns", s.pool, tname)
+	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s/luns", s.pool, tname)
 
 	l.Trace("Attaching volume to target: %s", tname)
 	stat, body, err := s.rp.Send("POST", addr, data, AttachToTargetRCode)
@@ -938,7 +938,7 @@ func (s *Storage) DettachFromTarget(tname string, vname string) RestError {
 		"func": "DettachFromTarget",
 	})
 
-	addr := fmt.Sprintf("api/v2/pools/%s/san/iscsi/targets/%s/luns/%s", s.pool, tname, vname)
+	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s/luns/%s", s.pool, tname, vname)
 
 	l.Trace("Detach volume from target: %s", tname)
 	stat, body, err := s.rp.Send("DELETE", addr, nil, AttachToTargetRCode)
@@ -1003,7 +1003,7 @@ func (s *Storage) AddUserToTarget(tname string,
 		Password: pass,
 	}
 
-	addr := fmt.Sprintf("api/v2/pools/%s/san/iscsi/targets/%s/incoming-users", s.pool, tname)
+	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s/incoming-users", s.pool, tname)
 
 	l.Trace("Set CHAP user for tartget: %s", tname)
 	stat, body, err := s.rp.Send("POST", addr, data, AddUserToTargetRCode)
