@@ -138,12 +138,11 @@ type CreateVolumeR struct {
 	Name      string
 }
 
-const CreateVolumeRCode = 200
+const CreateVolumeRCode = 201
 const CreateVolumeECodeExists = 5
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Delete volume
-//
 
 type DeleteVolume struct {
 	RecursivelyChildren   bool `json:"recursively_children"`
@@ -328,7 +327,7 @@ const DeleteTargetRCode = 204
 
 type AttachToTarget struct {
 	Name string `json:"name"`
-	Lun  string `json:"lun"`
+	Lun  int    `json:"lun"`
 	Mode string `json:"mode"`
 }
 

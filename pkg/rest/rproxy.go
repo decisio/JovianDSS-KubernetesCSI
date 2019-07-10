@@ -50,7 +50,7 @@ func (rp *RestProxy) Send(method, path string, data interface{}, ok int) (int, [
 
 	addr := fmt.Sprintf("%s://%s:%d/%s", rp.prot, rp.addr, rp.port, path)
 
-	rp.l.Debug("send request to %s", addr)
+	rp.l.Debug(fmt.Sprintf("Send %s request to %s", method, addr))
 
 	// send request data as json
 	var reader io.Reader

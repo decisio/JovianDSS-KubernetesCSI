@@ -162,7 +162,7 @@ func (s *Storage) CreateVolume(vdesc CreateVolumeDescriptor) RestError {
 
 	}
 
-	s.l.Trace("Unable to create volume: %s", string(body[:len(body)]))
+	s.l.Trace(fmt.Sprintf("Unable to create volume: %s", string(body[:len(body)])))
 
 	errData, er := s.getError(body)
 
@@ -882,13 +882,13 @@ func (s *Storage) AttachToTarget(tname string,
 
 	data := AttachToTarget{
 		Name: vname,
-		Lun:  "0",
+		Lun:  0,
 		Mode: "wt",
 	}
 
 	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s/luns", s.pool, tname)
 
-	l.Trace("Attaching volume to target: %s", tname)
+	l.Trace(fmt.Sprintf("Attaching volume to target: %s", tname))
 	stat, body, err := s.rp.Send("POST", addr, data, AttachToTargetRCode)
 
 	if err != nil {

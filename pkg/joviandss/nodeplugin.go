@@ -32,7 +32,7 @@ func GetNodePlugin(conf *NodeCfg, log *logrus.Entry) (np *NodePlugin, err error)
 		cfg: conf,
 		l:   log.WithFields(lFields),
 	}
-	log.Debug("Config:%+v", *conf)
+	log.Debug(fmt.Sprintf("Config: %+v", *conf))
 	return np, nil
 }
 
