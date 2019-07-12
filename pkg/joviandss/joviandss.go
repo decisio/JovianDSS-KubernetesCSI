@@ -5,11 +5,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var Name = "com.open-e.joviandss.csi"
+var name = "com.open-e.joviandss.csi"
 
 // Version of plugin, should be filed during compilation
 var Version string
 
+// JovianDSS CSI plugin
 type JovianDSS struct {
 	name string
 	s    *PluginServer
@@ -20,6 +21,7 @@ type JovianDSS struct {
 	cscap []*csi.ControllerServiceCapability
 }
 
+// Initialise JovianDSS CSI Plugin
 func GetPlugin(cfg *Config, l *logrus.Entry) (*JovianDSS, error) {
 
 	j := &JovianDSS{}
@@ -29,10 +31,11 @@ func GetPlugin(cfg *Config, l *logrus.Entry) (*JovianDSS, error) {
 	})
 
 	j.cfg = cfg
-	j.cfg.DriverName = Name
+	j.cfg.DriverName = name
 	return j, nil
 }
 
+// Settup and run plugin
 func (j *JovianDSS) Run() (err error) {
 	j.l.Infof("Running %s driver, version %s", j.cfg.DriverName, Version)
 
