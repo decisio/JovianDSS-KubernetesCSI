@@ -1,5 +1,7 @@
 # Open-E JovianDSS Kubernetes CSI plugin
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/open-e/JovianDSS-KubernetesCSI)](https://goreportcard.com/report/github.com/open-e/JovianDSS-KubernetesCSI)
+
 ## Deployment
 
 ### Configuring
