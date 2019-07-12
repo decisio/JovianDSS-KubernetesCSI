@@ -20,6 +20,7 @@ package rest
 ///////////////////////////////////////////////////////////////////////////////
 /// Error message
 
+// Error message returned by server
 type ErrorT struct {
 	Class   string
 	Errno   int
@@ -27,6 +28,7 @@ type ErrorT struct {
 	Url     string
 }
 
+// Response mask
 type ErrorData struct {
 	Data  interface{}
 	Error ErrorT
@@ -41,6 +43,7 @@ type IOStats struct {
 	chksum string
 }
 
+// Disk structure returned by server
 type Disk struct {
 	Name    string
 	Id      string
@@ -54,6 +57,7 @@ type Disk struct {
 	Origin  string
 }
 
+// Virtual device structure
 type VDevice struct {
 	Name    string
 	Type    string
@@ -62,10 +66,12 @@ type VDevice struct {
 	Disks   []Disk
 }
 
+// Enable flag
 type Enabled struct {
 	Enabled bool
 }
 
+// Pool response structure
 type Pool struct {
 	Name       string
 	Status     int
@@ -77,16 +83,19 @@ type Pool struct {
 	Vdevs      []VDevice
 }
 
+// Response mask
 type GetPoolsData struct {
 	Data  []Pool
 	Error ErrorT
 }
 
+// Get Pool response status code
 const GetPoolsRCode = 200
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Volume
 
+// Volume response structure
 type Volume struct {
 	Origin               string
 	Reference            string
@@ -122,11 +131,13 @@ type Volume struct {
 	Refreservation       string
 }
 
+// Get Volume response mask
 type GetVolumeData struct {
 	Data  Volume
 	Error ErrorT
 }
 
+// Get Volume response code
 const GetVolumeRCode = 200
 
 type GetVolumesData struct {
