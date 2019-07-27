@@ -458,7 +458,7 @@ func (t *Target) StageVolume() error {
 
 	out, err := exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "--discover")
 
-	out, err := exec.Run("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", t.Portal)
+	out, err = exec.Run("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", t.Portal)
 
 	// Set properties
 
