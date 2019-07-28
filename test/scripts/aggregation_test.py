@@ -194,15 +194,20 @@ def wait_for_plugin_started(root, t):
     raise Exception("Unable to get plugins to start running in time.")
 
 def wait_for_nginx_started(root, t):
+    """Startn nginx container with JovianDSS volume
+            and wait till it successfully loaded.
+    """
+
     v = vagrant.Vagrant(root=root)
 
     con = Connection(v.user_hostname_port(),
                      connect_kwargs={
                          "key_filename": v.keyfile(),
                      })
-
+    nginx_pending = re.compile(r'^nginx.*Pending.*$')
     nginx_running = re.compile(r'^nginx.*Running.*$')
     nginx_creating = re.compile(r'^nginx.*ContainerCreating.*$')
+
     while t > 0:
         time.sleep(1)
         t = t - 1
@@ -218,14 +223,21 @@ def wait_for_nginx_started(root, t):
                 continue
             return True
 
-        nc = ""
+        np = None
+        for line in out.splitlines():
+            nc = nginx_pending.search(line)
+            if np is None:
+                continue
+            break
+
+        nc = None
         for line in out.splitlines():
             nc = nginx_creating.search(line)
             if nc is None:
                 continue
             break
 
-        if nc is None:
+        if (nc is None) and (np is None):
             print(out)
             out = con.run("kubectl get events")
             raise Exception("Fail during nginx loading.")
