@@ -225,7 +225,7 @@ def wait_for_nginx_started(root, t):
 
         np = None
         for line in out.splitlines():
-            nc = nginx_pending.search(line)
+            np = nginx_pending.search(line)
             if np is None:
                 continue
             break
@@ -274,7 +274,7 @@ def main():
     clean_vm(root)
 
     init_vm(csi_test_vm, root)
-    init_test_env("./build/src", root)
+    #init_test_env("./build/src", root)
     try:
         run_vm(root)
         load_modules(root)
@@ -287,7 +287,7 @@ def main():
         wait_for_nginx_started(root, 120)
     except Exception as err:
         print(err)
-        clean_vm(root)
+        #clean_vm(root)
         raise err
 
     print("Success!")
