@@ -201,10 +201,14 @@ def wait_for_plugin_started(root, sec):
                 continue
             break
 
-        if len([i for i in
-                [ctrl_creating, ctrl_running, node_running, node_running] if i != None]
-              ) != 2:
+        identified_statuses = len([i for i in [ctrl_creating,
+                                               ctrl_running, 
+                                               node_creating,
+                                               node_running] if i != None])
+        if identified_statuses != 2:
+            print(identified_statuses)
             print([ctrl_creating, ctrl_running, node_creating, node_running])
+            out = con.run("kubectl get pods")
             out = con.run("kubectl get events")
             raise Exception("Fail during plugin loading.")
 
