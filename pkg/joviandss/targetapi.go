@@ -23,28 +23,7 @@ const (
 	deviceIPPath = "/dev/disk/by-path/ip"
 )
 
-func (t *Target) EqualTo(stPath string) (eq bool, err error) {
-	var msg string
-	if exists, _ := mount.PathExists(t.TPath); exists == false {
-		msg = fmt.Sprintf("Specified Target file do not exist %s", t.TPath)
-		return false, status.Error(codes.Internal, msg)
-	}
-
-	var to *Target
-	to, err = GetTargetFromPath(t.cfg, t.l, stPath)
-	if err != nil {
-		msg = fmt.Sprintf("Unable to extract Target for file: %s", t.TPath)
-		t.l.Warn(msg)
-		return false, status.Error(codes.InvalidArgument, msg)
-	}
-
-	if t.Tname == to.Tname {
-		return true, nil
-	}
-
-	return false, nil
-}
-
+// GetTarget constructs basic Target structure
 func GetTarget(cfg *NodeCfg, log *logrus.Entry, tp string) (t *Target, err error) {
 	l := log.WithFields(logrus.Fields{
 		"node": cfg.Id,
@@ -63,6 +42,7 @@ func GetTarget(cfg *NodeCfg, log *logrus.Entry, tp string) (t *Target, err error
 
 }
 
+// GetTargetFromReq constructs Target structure from request data
 func GetTargetFromReq(cfg *NodeCfg, log *logrus.Entry, r interface{}) (t *Target, err error) {
 
 	l := log.WithFields(logrus.Fields{
@@ -72,7 +52,7 @@ func GetTargetFromReq(cfg *NodeCfg, log *logrus.Entry, r interface{}) (t *Target
 
 	var ctx map[string]string
 	var msg string
-	var vId string
+	var vID string
 
 	var fsType string
 	var mountFlags []string
@@ -92,8 +72,8 @@ func GetTargetFromReq(cfg *NodeCfg, log *logrus.Entry, r interface{}) (t *Target
 			return nil, status.Error(codes.InvalidArgument, msg)
 		}
 
-		vId = d.GetVolumeId()
-		if len(vId) == 0 {
+		vID = d.GetVolumeId()
+		if len(vID) == 0 {
 			msg = fmt.Sprintf("Request do not contain volume id")
 			l.Warn(msg)
 			return nil, status.Error(codes.InvalidArgument, msg)
@@ -125,8 +105,8 @@ func GetTargetFromReq(cfg *NodeCfg, log *logrus.Entry, r interface{}) (t *Target
 			return nil, status.Error(codes.InvalidArgument, msg)
 		}
 
-		vId = d.GetVolumeId()
-		if len(vId) == 0 {
+		vID = d.GetVolumeId()
+		if len(vID) == 0 {
 			msg = fmt.Sprintf("Request do not contain volume id")
 			l.Warn(msg)
 			return nil, status.Error(codes.InvalidArgument, msg)
@@ -184,7 +164,7 @@ func GetTargetFromReq(cfg *NodeCfg, log *logrus.Entry, r interface{}) (t *Target
 		lun = "0"
 	}
 
-	tname := iqn + ":" + vId
+	tname := iqn + ":" + vID
 
 	fullPortal := p + ":" + pp
 
@@ -198,7 +178,7 @@ func GetTargetFromReq(cfg *NodeCfg, log *logrus.Entry, r interface{}) (t *Target
 		Portal:     p,
 		PortalPort: pp,
 		Iqn:        iqn,
-		Tname:      vId,
+		Tname:      vID,
 		Lun:        lun,
 		CoUser:     coUser, // Chap outgoing password
 		CoPass:     coPass, // Chap outgoing Password
@@ -221,6 +201,7 @@ func GetTargetFromReq(cfg *NodeCfg, log *logrus.Entry, r interface{}) (t *Target
 	return t, nil
 }
 
+// GetTargetFromPath recoinstruct Target on the basis of the path
 func GetTargetFromPath(cfg *NodeCfg, log *logrus.Entry, path string) (t *Target, err error) {
 
 	t = &Target{}
@@ -239,6 +220,7 @@ func GetTargetFromPath(cfg *NodeCfg, log *logrus.Entry, path string) (t *Target,
 	return t, nil
 }
 
+// SerializeTarget stores Target data to file
 func (t *Target) SerializeTarget() error {
 
 	var msg string
@@ -273,6 +255,7 @@ func (t *Target) SerializeTarget() error {
 	return nil
 }
 
+// DeSerializeTarget restores Target form data file
 func (t *Target) DeSerializeTarget(stp string) error {
 	var msg string
 
@@ -293,6 +276,7 @@ func (t *Target) DeSerializeTarget(stp string) error {
 	return nil
 }
 
+// DeleteSerialization deletes record file about target
 func (t *Target) DeleteSerialization() (err error) {
 	var msg string
 	stp := t.STPath + "/starget"
@@ -315,6 +299,7 @@ func (t *Target) DeleteSerialization() (err error) {
 	return err
 }
 
+// SetChapCred puts chap credantial to local db
 func (t *Target) SetChapCred() error {
 
 	exec := mount.NewOsExec()
@@ -346,6 +331,7 @@ func (t *Target) SetChapCred() error {
 	return nil
 }
 
+// ClearChapCred sets chap credential to empty values
 func (t *Target) ClearChapCred() error {
 
 	exec := mount.NewOsExec()
@@ -364,6 +350,7 @@ func (t *Target) ClearChapCred() error {
 	return nil
 }
 
+// FormatMountVolume tries to check fs on volume and formats if not sutable been found
 func (t *Target) FormatMountVolume(req *csi.NodePublishVolumeRequest) error {
 	var err error
 	var msg string
@@ -391,6 +378,7 @@ func (t *Target) FormatMountVolume(req *csi.NodePublishVolumeRequest) error {
 	return nil
 }
 
+// UnMountVolume unmounts volume
 func (t *Target) UnMountVolume() error {
 	var err error
 	var msg string
@@ -433,8 +421,9 @@ func (t *Target) UnMountVolume() error {
 	return nil
 }
 
-//TODO: check for presence of the device
+// GetStageStatus check if specified dir exists
 func GetStageStatus(stp string) bool {
+	//TODO: check for presence of the device
 	stp = stp + "/starget"
 	if exists, _ := mount.PathExists(stp); exists == true {
 		return true
@@ -443,6 +432,7 @@ func GetStageStatus(stp string) bool {
 	return false
 }
 
+// StageVolume discovers iscsi target and attach it
 func (t *Target) StageVolume() error {
 
 	// Scan for targets
@@ -488,6 +478,7 @@ func (t *Target) StageVolume() error {
 	return nil
 }
 
+// UnStageVolume detachs iscsi target from host
 func (t *Target) UnStageVolume() error {
 
 	// Scan for targets
@@ -516,14 +507,14 @@ func (t *Target) UnStageVolume() error {
 	return nil
 }
 
-type StatFunc func(string) (os.FileInfo, error)
-type GlobFunc func(string) ([]string, error)
+type statFunc func(string) (os.FileInfo, error)
+type globFunc func(string) ([]string, error)
 
 func waitForPathToExist(devicePath *string, maxRetries int, deviceTransport string) bool {
 	return waitForPathToExistInternal(devicePath, maxRetries, deviceTransport, os.Stat, filepath.Glob)
 }
 
-func waitForPathToExistInternal(devicePath *string, maxRetries int, deviceTransport string, osStat StatFunc, filepathGlob GlobFunc) bool {
+func waitForPathToExistInternal(devicePath *string, maxRetries int, deviceTransport string, osStat statFunc, filepathGlob globFunc) bool {
 	if devicePath == nil {
 		return false
 	}

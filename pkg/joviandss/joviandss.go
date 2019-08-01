@@ -5,7 +5,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var name = "com.open-e.joviandss.csi"
+// Plugin name
+var Name = "com.open-e.joviandss.csi"
 
 // Version of plugin, should be filed during compilation
 var Version string
@@ -31,7 +32,7 @@ func GetPlugin(cfg *Config, l *logrus.Entry) (*JovianDSS, error) {
 	})
 
 	j.cfg = cfg
-	j.cfg.DriverName = name
+	j.cfg.DriverName = Name
 	return j, nil
 }
 
