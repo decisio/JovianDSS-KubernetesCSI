@@ -4,12 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type GeneralNodeRequest interface {
-	GetStagingTargetPath() string
-	GetVolumeContext() map[string]string
-	GetVolumeId() string
-}
-
+// Target stores info about iscsi target
 type Target struct {
 	l          *logrus.Entry
 	cfg        *NodeCfg

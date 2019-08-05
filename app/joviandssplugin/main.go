@@ -30,7 +30,7 @@ var (
 
 func main() {
 
-	cfg := handle_args()
+	cfg := handleArgs()
 	//TODO: check if logging parametrs a properly parse
 	l := initLogging(cfg.LLevel, cfg.LDest)
 
@@ -75,7 +75,7 @@ func initLogging(logLevel string, toFile string) *logrus.Entry {
 	return l
 }
 
-func handle_args() *joviandss.Config {
+func handleArgs() *joviandss.Config {
 
 	addr = flag.String("csi-address", "/var/lib/kubelet/plugins_registry/joviandss-csi-driver/csi.sock", "CSI endpoint socket address")
 	net = flag.String("soc-type", "tcp", "CSI endpoint socket type")

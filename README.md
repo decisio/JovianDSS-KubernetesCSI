@@ -43,6 +43,8 @@ Node config do not provides nothing but storage address and request to create pr
 
 ### Deploy plugin
 
+Make sure that you have iscsi\_tcp module installed on the machines running node plugin.
+
 If you change confing names from the previous step. Dont forget to modify  *joviandss-csi-controller.yaml* and *joviandss-csi-node.yaml* accordingly.
 To deploy plugins to a cluster:
 
