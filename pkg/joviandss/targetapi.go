@@ -446,20 +446,20 @@ func (t *Target) StageVolume() error {
 
 	exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "-o", "new")
 
-	out, err := exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "--discover")
+	exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "--discover")
 
-	out, err = exec.Run("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", t.Portal)
+	exec.Run("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", t.Portal)
 
 	// Set properties
 
-	err = t.SetChapCred()
+	err := t.SetChapCred()
 	if err != nil {
 		msg := fmt.Sprintf("iscsi: failed to update iscsi node to portal %s error: %v", tname, err)
 		return errors.New(msg)
 	}
 
 	//Attach Target
-	out, err = exec.Run("iscsiadm", "-m", "node", "-p", t.Portal, "-T", tname, "--login")
+	out, err := exec.Run("iscsiadm", "-m", "node", "-p", t.Portal, "-T", tname, "--login")
 	if err != nil {
 		t.ClearChapCred()
 		exec.Run("iscsiadm", "-m", "node", "-p", t.Portal, "-T", tname, "-o", "delete")

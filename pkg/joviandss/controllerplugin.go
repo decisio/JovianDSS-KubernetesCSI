@@ -1335,7 +1335,6 @@ func (cp *ControllerPlugin) ControllerPublishVolume(ctx context.Context, req *cs
 		PublishContext: secrets,
 	}
 	return resp, nil
-	//Snapshot created sucessfuly
 }
 
 func (cp *ControllerPlugin) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
@@ -1369,9 +1368,9 @@ func (cp *ControllerPlugin) ControllerUnpublishVolume(ctx context.Context, req *
 			//According to specification from
 			return nil, status.Error(codes.FailedPrecondition, r_err.Error())
 		case rest.RestFailureUnknown:
-			err = status.Errorf(codes.Internal, r_err.Error())
+			status.Errorf(codes.Internal, r_err.Error())
 		default:
-			err = status.Errorf(codes.Internal, "Unknown internal error")
+			status.Errorf(codes.Internal, "Unknown internal error")
 		}
 	}
 
