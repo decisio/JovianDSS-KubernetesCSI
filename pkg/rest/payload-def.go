@@ -20,7 +20,7 @@ package rest
 ///////////////////////////////////////////////////////////////////////////////
 /// Error message
 
-// Error message returned by server
+// ErrorT error message returned by server
 type ErrorT struct {
 	Class   string
 	Errno   int
@@ -28,7 +28,7 @@ type ErrorT struct {
 	Url     string
 }
 
-// Response mask
+// ErrorData response mask
 type ErrorData struct {
 	Data  interface{}
 	Error ErrorT
@@ -37,6 +37,7 @@ type ErrorData struct {
 ///////////////////////////////////////////////////////////////////////////////
 // /pools
 
+// IOStats data on input ourput statistics
 type IOStats struct {
 	Read   string
 	Write  string
@@ -57,7 +58,7 @@ type Disk struct {
 	Origin  string
 }
 
-// Virtual device structure
+// VDevice virtual device structure
 type VDevice struct {
 	Name    string
 	Type    string
@@ -66,7 +67,7 @@ type VDevice struct {
 	Disks   []Disk
 }
 
-// Enable flag
+// Enabled flag
 type Enabled struct {
 	Enabled bool
 }
@@ -83,13 +84,13 @@ type Pool struct {
 	Vdevs      []VDevice
 }
 
-// Response mask
+// GetPoolsData response mask
 type GetPoolsData struct {
 	Data  []Pool
 	Error ErrorT
 }
 
-// Get Pool response status code
+// GetPoolsRCode success response code
 const GetPoolsRCode = 200
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -131,34 +132,39 @@ type Volume struct {
 	Refreservation       string
 }
 
-// Get Volume response mask
+// GetVolumeData data
 type GetVolumeData struct {
 	Data  Volume
 	Error ErrorT
 }
 
-// Get Volume response code
+// GetVolumeRCode success response code
 const GetVolumeRCode = 200
 
+// GetVolumesData data structure
 type GetVolumesData struct {
 	Data  []Volume `json:"data"`
 	Error ErrorT   `json:"error"`
 }
 
+// GetVolumesRCode success response code
 const GetVolumesRCode = 200
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Create Volume
 
+// CreateVolume request
 type CreateVolume struct {
 	Name string `json:"name"`
 	Size string `json:"size"`
 }
 
+// CreateVolumeData data
 type CreateVolumeData struct {
 	Data CreateVolumeR
 }
 
+// CreateVolumeR response
 type CreateVolumeR struct {
 	Origin    string
 	Is_clone  bool
@@ -166,34 +172,45 @@ type CreateVolumeR struct {
 	Name      string
 }
 
+// CreateVolumeRCode success status code
 const CreateVolumeRCode = 201
+
+// CreateVolumeECodeExists exit code for volume exists
 const CreateVolumeECodeExists = 5
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Delete volume
 
+// DeleteVolume request
 type DeleteVolume struct {
 	RecursivelyChildren   bool `json:"recursively_children"`
 	RecursivelyDependents bool `json:"recursively_dependents"`
 	ForceUmount           bool `json:"force_umount"`
 }
 
+// DeleteVolumeData data
 type DeleteVolumeData struct {
 	Error ErrorT
 }
 
+// DeleteVolumeRCode success status code
 const DeleteVolumeRCode = 204
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Create Snapshot
 
+// CreateSnapshot request
 type CreateSnapshot struct {
 	Snapshot_name string `json:"snapshot_name"`
 }
 
+// CreateSnapshotRCode success status code
 const CreateSnapshotRCode = 200
+
+// CreateSnapshotECodeExists exit code for snapshot exists
 const CreateSnapshotECodeExists = 5
 
+// CreateSnapshotData data
 type CreateSnapshotData struct {
 	Error ErrorT `json:"data"`
 }
@@ -201,6 +218,7 @@ type CreateSnapshotData struct {
 ///////////////////////////////////////////////////////////////////////////////
 /// Get Snapshot
 
+// Snapshot structure
 type Snapshot struct {
 	Referenced       string
 	Name             string
@@ -218,74 +236,92 @@ type Snapshot struct {
 	Secondarycache   string
 }
 
+// GetSnapshotData data
 type GetSnapshotData struct {
 	Data  Snapshot
 	Error ErrorT
 }
 
+// GetSnapshotRCode success status code
 const GetSnapshotRCode = 200
 
+// GetSnapshotRCodeDNE exit code for snapshot do not exists
 const GetSnapshotRCodeDNE = 500
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Get Snapshots
 
+// SnapshotProperties structure
 type SnapshotProperties struct {
 	Creation string
 }
 
+// SnapshotShort structure
 type SnapshotShort struct {
 	Volume     string
 	Name       string
 	Properties SnapshotProperties
 }
 
+// AllSnapshots structure
 type AllSnapshots struct {
 	Results int
 	Entries []SnapshotShort
 }
 
+// GetAllSnapshotsData data
 type GetAllSnapshotsData struct {
 	Data  AllSnapshots
 	Error ErrorT
 }
 
+// GetAllSnapshotsRCode success status code
 const GetAllSnapshotsRCode = 200
 
+// VolSnapshots structure
 type VolSnapshots struct {
 	Results int
 	Entries []Snapshot
 }
 
+// GetVolSnapshotsData data
 type GetVolSnapshotsData struct {
 	Data  VolSnapshots
 	Error ErrorT
 }
 
+// GetVolSnapshotsRCode success status code
 const GetVolSnapshotsRCode = 200
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Delete Snapshot
 
+// DeleteSnapshot structure
 type DeleteSnapshot struct {
 	Recursively_dependents bool
 }
 
+// DeleteSnapshotData data
 type DeleteSnapshotData struct {
 	Error ErrorT
 }
 
+// DeleteSnapshotRCode success status code
 const DeleteSnapshotRCode = 204
+
+// DeleteSnapshotRCodeBusy snapshot is busy code
 const DeleteSnapshotRCodeBusy = 1000
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Clone volume
 
+// CreateClone request
 type CreateClone struct {
 	Name     string `json:"name"`
 	Snapshot string `json:"snapshot"`
 }
 
+// CreateCloneR response
 type CreateCloneR struct {
 	Origin   string `json:"origin"`
 	IsClone  bool   `json:"is_clone"`
@@ -293,89 +329,104 @@ type CreateCloneR struct {
 	Name     string `json:"name"`
 }
 
+// CreateCloneData data
 type CreateCloneData struct {
 	Data  CreateCloneR
 	Error ErrorT
 }
 
+// CreateCloneRCode success status code
 const CreateCloneRCode = 200
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Delete clone
 
+// DeleteClone request
 type DeleteClone struct {
 	RecursivelyChildren   bool `json:"recursively_children"`
 	RecursivelyDependents bool `json:"recursively_dependents"`
 	ForceUmount           bool `json:"force_umount"`
 }
 
+// DeleteCloneData data
 type DeleteCloneData struct {
 	Error ErrorT
 }
 
+// DeleteCloneRCode success status code
 const DeleteCloneRCode = 200
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Promote cloned volume
 
+// PromoteClone request
 type PromoteClone struct {
 	Poolname string `json:"poolname"`
 }
 
+// PromoteCloneData response data
 type PromoteCloneData struct {
 	Error ErrorT
 }
 
+// PromoteCloneRCode success status code
 const PromoteCloneRCode = 200
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Create Target
 
-type OutgoingUser struct {
-	Password string `json:"password"`
-	Name     string `json:"name"`
-}
-
+// CreateTarget request
 type CreateTarget struct {
 	Name                string `json:"name"`
 	Active              bool   `json:"active"`
 	IncomingUsersActive bool   `json:"incoming_users_active"`
 }
 
+// CreateTargetData response data
 type CreateTargetData struct {
 	Error ErrorT
 }
 
+// CreateTargetRCode success status code
 const CreateTargetRCode = 201
 
+// DeleteTargetRCode success status code
 const DeleteTargetRCode = 204
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Attach Volume to Target
 
+// AttachToTarget request
 type AttachToTarget struct {
 	Name string `json:"name"`
 	Lun  int    `json:"lun"`
 	Mode string `json:"mode"`
 }
 
+// AttachToTargetData response data
 type AttachToTargetData struct {
 	Error ErrorT
 }
 
+// AttachToTargetRCode success status code
 const AttachToTargetRCode = 201
+
+// DettachFromTargetRCode success status code
 const DettachFromTargetRCode = 204
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Add User to Target
 
+// AddUserToTarget request
 type AddUserToTarget struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 }
 
+// AddUserToTargetData data structure
 type AddUserToTargetData struct {
 	Error ErrorT
 }
 
+// AddUserToTargetRCode success status code
 const AddUserToTargetRCode = 201
