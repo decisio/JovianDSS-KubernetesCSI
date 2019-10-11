@@ -89,9 +89,10 @@ def main():
         runCSISanity(root)
     except Exception as err:
         print(err)
-        cleanVM(root)
         raise err
 
+    cleanVM(root)
+    print("Success!")
 
 if __name__ == "__main__":
     main()
