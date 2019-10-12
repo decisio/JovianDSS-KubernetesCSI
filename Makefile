@@ -1,9 +1,10 @@
-REGISTRY_NAME=andreiperepiolkin
-IMAGE_NAME=joviandss-kubernetes-csi
-IMAGE_VERSION=latest
-IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):$(IMAGE_VERSION)
-REV=$(shell git describe --long --tags)
-
+REGISTRY_NAME=opene
+IMAGE_NAME=joviandss-csi
+IMAGE_VERSION=$(shell git describe --long --tags)
+BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD)
+IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):$(BRANCH_NAME)-$(IMAGE_VERSION)
+IMAGE_LATEST=$(REGISTRY_NAME)/$(IMAGE_NAME):latest
+#REV=$(shell git describe --long --tags)
 
 .PHONY: default all joviandss clean hostpath-container iscsi rest
 
@@ -16,15 +17,11 @@ rest:
 
 joviandss: rest
 
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-X JovianDSS-KubernetesCSI/pkg/joviandss.Version=$(REV) -extldflags "-static"' -o _output/jdss-csi-plugin ./app/joviandssplugin
+	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-X JovianDSS-KubernetesCSI/pkg/joviandss.Version=$(IMAGE_VERSION) -extldflags "-static"' -o _output/jdss-csi-plugin ./app/joviandssplugin
 
 joviandss-container: joviandss
 	@echo Building Container
-	sudo docker build -t $(IMAGE_TAG) -f ./app/joviandssplugin/Dockerfile .
-
-push: joviandss-container
-	@echo Publish Container
-	sudo docker push $(IMAGE_TAG)
+	sudo docker build -t $(IMAGE_LATEST) -f ./app/joviandssplugin/Dockerfile .
 
 clean:
 	go clean -r -x
