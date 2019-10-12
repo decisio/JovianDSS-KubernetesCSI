@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 
+import time
+import vagrant
 import os
 import re
 import shutil
-import time
-import vagrant
+import sys
+
 
 from fabric import Connection
 
@@ -295,6 +297,11 @@ def main():
 
     init_vm(csi_test_vm, root)
     init_test_env("./build/src", root)
+
+    ignore_cleaning = False
+    if "--nclean" in sys.argv:
+        ignore_cleaning = True
+
     try:
         run_vm(root)
         load_modules(root)
@@ -309,8 +316,13 @@ def main():
         print(err)
         raise err
 
-    clean_vm(root)
     print("Success!")
+
+    if ignore_cleaning:
+        exit(0)
+
+    clean_vm(root)
+
 
 if __name__ == "__main__":
     main()
