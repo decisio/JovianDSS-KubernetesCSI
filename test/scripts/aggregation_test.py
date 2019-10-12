@@ -307,9 +307,9 @@ def main():
         wait_for_nginx_started(root, 120)
     except Exception as err:
         print(err)
-        #clean_vm(root)
         raise err
 
+    clean_vm(root)
     print("Success!")
 
 if __name__ == "__main__":
