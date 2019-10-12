@@ -59,7 +59,7 @@ def init_test_env(src, root):
         pass
 
     dst = root + "/build/src"
-    os.rename(src, dst)
+    shutil.copytree(src, dst)
 
 def load_modules(root):
     """Insert necessary kernel modules"""
