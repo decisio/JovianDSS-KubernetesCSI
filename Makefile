@@ -4,7 +4,6 @@ IMAGE_VERSION=$(shell git describe --long --tags)
 BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD)
 IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):$(BRANCH_NAME)-$(IMAGE_VERSION)
 IMAGE_LATEST=$(REGISTRY_NAME)/$(IMAGE_NAME):latest
-#REV=$(shell git describe --long --tags)
 
 .PHONY: default all joviandss clean hostpath-container iscsi rest
 
