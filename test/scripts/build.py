@@ -77,7 +77,7 @@ def build_code(root):
         })
     out = con.run(cmd)
 
-    cmd = "sudo docker save -o ~/go/src/JovianDSS-KubernetesCSI/_output/joviandss-kubernetes-csi-latest opene/joviandss-csi:latest"
+    cmd = "sudo docker save -o ~/go/src/JovianDSS-KubernetesCSI/_output/joviandss-csi-latest opene/joviandss-csi:latest"
     con = Connection(v.user_hostname_port(),
         connect_kwargs={
         "key_filename": v.keyfile(),

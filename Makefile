@@ -1,8 +1,8 @@
 REGISTRY_NAME=opene
 IMAGE_NAME=joviandss-csi
-IMAGE_VERSION=$(shell git describe --long --tags)
 BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD)
-IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):$(BRANCH_NAME)-$(IMAGE_VERSION)
+IMAGE_VERSION=$(BRANCH_NAME)-$(shell git describe --long --tags)
+IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):$(IMAGE_VERSION)
 IMAGE_LATEST=$(REGISTRY_NAME)/$(IMAGE_NAME):latest
 
 .PHONY: default all joviandss clean hostpath-container iscsi rest
