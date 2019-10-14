@@ -66,7 +66,16 @@ def get_code(root):
         })
     out = con.sudo(cmd)
 
-def build_code(root):
+def get_version(src):
+    """Get version of currently builded code """
+    get_tag = "git -C " + src + " describe --long --tags"
+    get_branch = "git -C " + src + "rev-parse --abbrev-ref HEAD"
+    tag_out = subprocess.check_output(get_tag)
+    branch_out = subprocess.check_output(get_branch)
+
+    return branch_out + "-" + tag_out
+
+def build_code(root, version):
     v = vagrant.Vagrant(root=root)
 
     # Start plugin
@@ -77,7 +86,8 @@ def build_code(root):
         })
     out = con.run(cmd)
 
-    cmd = "sudo docker save -o ~/go/src/JovianDSS-KubernetesCSI/_output/joviandss-csi-latest opene/joviandss-csi:latest"
+    cmd = ("sudo docker save -o ~/go/src/JovianDSS-KubernetesCSI/_output/joviandss-csi:" 
+            + version + " opene/joviandss-csi:latest")
     con = Connection(v.user_hostname_port(),
         connect_kwargs={
         "key_filename": v.keyfile(),
@@ -104,11 +114,12 @@ def main(args):
     clean_vm(root)
 
     init_vm(csi_test_vm, root)
-    init_env("./build/", root)
+    #init_env("./build/", root)
+    version = get_version("./build/src")
     try:
         run_vm(root)
-        get_code(root)
-        build_code(root)
+        #get_code(root)
+        build_code(root, version)
     except Exception as err:
         print(err)
 
@@ -124,6 +135,8 @@ if __name__ == "__main__":
     parser.add_argument('--no-clean', dest='nc', type=bool, default=False, 
             help='Do Not clean environment after execution.')
     parser.add_argument('--build-vm', dest='bvm', type=str, default="fedora29-build-env", 
+            help='VM template to be used for building plugin.')
+    parser.add_argument('--branch', dest='branch', type=str, default="master", 
             help='VM template to be used for building plugin.')
 
     args = parser.parse_args()
