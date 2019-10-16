@@ -107,12 +107,9 @@ def add_secrets(root):
 
 def get_version(src):
     """Get version of currently builded code """
-    get_tag = "git -C " + src + " describe --long --tags"
-    get_branch = "git -C " + src + "rev-parse --abbrev-ref HEAD"
+    get_tag = ["git", "-C", src, "describe", "--long", "--tags"]
     tag_out = subprocess.check_output(get_tag)
-    branch_out = subprocess.check_output(get_branch)
-
-    return branch_out + "-" + tag_out
+    return tag_out.strip().decode('ascii')
 
 def start_plugin(root, version):
     """Start controller and node plugins"""
@@ -300,6 +297,9 @@ def create_storage_class(root):
                      })
     con.run(add_sc_cmd)
 
+def publish_container(root, args):
+    pass
+
 def main(args):
     """Runs aggregation test on freshly build
             container of kubernetes csi plugin
@@ -314,14 +314,15 @@ def main(args):
 
     init_vm(csi_test_vm, root)
     init_test_env("./build/src", root)
-    version = get_version(root + "./build/src")
+    version = get_version(root + "/build/src")
 
+    # Run tests section
     try:
         run_vm(root)
         load_modules(root)
-        register_container_in_vm(root)
+        register_container_in_vm(root, version)
         add_secrets(root)
-        start_plugin(root)
+        start_plugin(root, version)
         wait_for_plugin_started(root, 220)
         create_storage_class(root)
         start_nginx(root)
@@ -329,6 +330,10 @@ def main(args):
     except Exception as err:
         print(err)
         raise err
+
+    # Publish section
+    if (args.dpl or args.dpv):
+        publish_container(root, args)
 
     if args.nc == True:
         clean_vm(root)
@@ -341,11 +346,20 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--no-clean', dest='nc', type=bool, default=False,
+    parser.add_argument('--no-clean', dest='nc', action='store_true',
             help='Do Not clean environment after execution.')
     parser.add_argument('--test-vm', dest='tvm', type=str, default="kubernetes-14.3",
             help='VM template to be used for building plugin.')
+    parser.add_argument('--docker-pass', dest='password', type=str, default=None,
+            help='Password for dockerhub.')
+    parser.add_argument('--docker-push-latest', dest='dpl', action='store_true',
+            help='Push container to tegistry as latest if tests are successful.')
+    parser.add_argument('--docker-push-version', dest='dpv', action='store_true',
+            help='Push container to tegistry according to src tag if tests are successful.')
 
     args = parser.parse_args()
+
+    if (args.dpl or args.dpv) and (args.password == None):
+        raise argparse.ArgumentTypeError('Please provide docker password for publishing.')
 
     main(args)
