@@ -177,6 +177,8 @@ def wait_for_plugin_started(root, sec):
     node_creating_pattern = re.compile(
         r'^joviandss-csi-node-.*ContainerCreating.*$')
 
+    time.sleep(30)
+
     while sec > 0:
         sec = sec - 1
         time.sleep(1)
