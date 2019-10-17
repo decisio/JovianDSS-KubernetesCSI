@@ -297,8 +297,36 @@ def create_storage_class(root):
                      })
     con.run(add_sc_cmd)
 
-def publish_container(root, args):
-    pass
+def publish_container(root, argsi, version):
+    """Publish tested container to dockerhub"""
+
+    print(" - Publish container to dockerhub.")
+
+    v = vagrant.Vagrant(root=root)
+
+    con = Connection(v.user_hostname_port(),
+                     connect_kwargs={
+                         "key_filename": v.keyfile(),
+                     })
+
+    login_to_docker = ("docker login -u opene -p " + args.password)
+    con.sudo(login_to_docker)
+
+    if args.dpl == True:
+        print(" - Publishing with tag latest.")
+        set_tag_latest = ("docker tag opene/joviandss-csi:" + version +
+                            " opene/joviandss-csi:latest")
+        con.sudo(set_tag_latest)
+
+        upload_latest = "docker push opene/joviandss-csi:latest"
+        con.sudo(upload_latest)
+
+    if args.dpv == True:
+        print(" - Publishing with tag " + version)
+        upload_latest = "docker push opene/joviandss-csi:" + version
+        con.sudo(upload_latest)
+
+    return
 
 def main(args):
     """Runs aggregation test on freshly build
@@ -333,16 +361,12 @@ def main(args):
 
     # Publish section
     if (args.dpl or args.dpv):
-        publish_container(root, args)
+        publish_container(root, args, version)
 
     if args.nc == True:
         clean_vm(root)
 
     print("Success!")
-
-
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
