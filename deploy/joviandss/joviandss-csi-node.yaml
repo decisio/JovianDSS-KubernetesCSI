@@ -74,8 +74,8 @@ spec:
             capabilities:
               add: ['SYS_ADMIN']
             allowPrivilegeEscalation: true
-          image: andreiperepiolkin/joviandss-kubernetes-csi:latest
-          imagePullPolicy: Always
+          image: opene/joviandss-csi:latest
+          imagePullPolicy: IfNotPresent
           args:
             - --csi-address=/csi/csi.sock
             - --soc-type=unix

@@ -1,10 +1,8 @@
 REGISTRY_NAME=opene
 IMAGE_NAME=joviandss-csi
 IMAGE_VERSION=$(shell git describe --long --tags)
-BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD)
-IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):$(BRANCH_NAME)-$(IMAGE_VERSION)
+IMAGE_TAG=$(REGISTRY_NAME)/$(IMAGE_NAME):$(IMAGE_VERSION)
 IMAGE_LATEST=$(REGISTRY_NAME)/$(IMAGE_NAME):latest
-#REV=$(shell git describe --long --tags)
 
 .PHONY: default all joviandss clean hostpath-container iscsi rest
 
@@ -21,7 +19,7 @@ joviandss: rest
 
 joviandss-container: joviandss
 	@echo Building Container
-	sudo docker build -t $(IMAGE_LATEST) -f ./app/joviandssplugin/Dockerfile .
+	sudo docker build -t $(IMAGE_TAG) -f ./app/joviandssplugin/Dockerfile .
 
 clean:
 	go clean -r -x

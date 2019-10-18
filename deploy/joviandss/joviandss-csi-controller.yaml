@@ -121,7 +121,7 @@ spec:
               mountPath: /var/lib/csi/sockets/pluginproxy
 
         - name: csi-controller
-          image: andreiperepiolkin/joviandss-kubernetes-csi:latest
+          image: opene/joviandss-csi:latest
           args:
             - --csi-address=/csi/csi.sock
             - --soc-type=unix
@@ -129,7 +129,7 @@ spec:
           env:
             - name: JOVIANDSS_CONFIG
               value: /config/controller-cfg.yaml
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
           volumeMounts:
