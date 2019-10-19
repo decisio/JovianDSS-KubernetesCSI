@@ -8,7 +8,7 @@ IMAGE_LATEST=$(REGISTRY_NAME)/$(IMAGE_NAME):latest
 
 default: joviandss
 	
-all:  joviandss container-container rest
+all:  joviandss joviandss-container rest
 
 rest:
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o _output/rest ./app/rest

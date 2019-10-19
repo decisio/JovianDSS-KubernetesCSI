@@ -76,16 +76,27 @@ def get_version(src):
 def build_code(root, version):
     v = vagrant.Vagrant(root=root)
 
+    cd_src = "cd ~/go/src/github.com/open-e/JovianDSS-KubernetesCSI; "
+    # Get dependency
+    cmd =  cd_src + "go get ./... ;"
+    con = Connection(v.user_hostname_port(),
+        connect_kwargs={
+        "key_filename": v.keyfile(),
+        })
+    out = con.run(cmd)
+    
+
     # Start plugin
-    cmd = "cd ./go/src/JovianDSS-KubernetesCSI; make joviandss-container;"
+    cmd = cd_src + "make joviandss-container;"
     con = Connection(v.user_hostname_port(),
         connect_kwargs={
         "key_filename": v.keyfile(),
         })
     out = con.run(cmd)
 
-    cmd = ("sudo docker save -o ~/go/src/JovianDSS-KubernetesCSI/_output/joviandss-csi:" 
-            + version + " opene/joviandss-csi:" + version)
+    cmd = ("sudo docker save -o ~/go/src/github.com/open-e/" +
+            "JovianDSS-KubernetesCSI/_output/joviandss-csi:" +
+            version + " opene/joviandss-csi:" + version)
     con = Connection(v.user_hostname_port(),
         connect_kwargs={
         "key_filename": v.keyfile(),
@@ -102,7 +113,6 @@ def main(args):
     root -- folder to run test in
     csi_test_vm -- name of vagrant VM to run test in
     """
-
 
     root = "build"
     csi_test_vm = args.bvm
@@ -130,7 +140,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-clean', dest='nc', action='store_true',
             help='Do Not clean environment after execution.')
-    parser.add_argument('--build-vm', dest='bvm', type=str, default="fedora29-build-env",
+    parser.add_argument('--build-vm', dest='bvm', type=str, default="fedora29-build-0.6",
             help='VM template to be used for building plugin.')
     parser.add_argument('--branch', dest='branch', type=str, default="master",
             help='VM template to be used for building plugin.')

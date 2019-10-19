@@ -2,6 +2,7 @@ package joviandss
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/sirupsen/logrus"
@@ -72,12 +73,11 @@ func (np *NodePlugin) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	// Some activity are taking place with target staging path
 	if exists == false {
-		m := mount.SafeFormatAndMount{
-			Interface: mount.New(""),
-			Exec:      mount.NewOsExec()}
+		if err = os.MkdirAll(t.STPath, 0640); err != nil {
+			msg = fmt.Sprintf("Unable to create directory %s, Error:%s", t.TPath, err.Error())
+			return nil, status.Error(codes.Internal, msg)
 
-		m.MakeDir(t.STPath)
-		msg = fmt.Sprintf("Staging folder %s DNE exists. Creating", t.STPath)
+		}
 	}
 
 	// Volume do not exist

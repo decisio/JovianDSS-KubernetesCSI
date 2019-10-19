@@ -4,7 +4,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 
-	"JovianDSS-KubernetesCSI/pkg/rest"
+	"github.com/open-e/JovianDSS-KubernetesCSI/pkg/rest"
 )
 
 type ControllerCfg struct {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"JovianDSS-KubernetesCSI/pkg/joviandss"
+	"github.com/open-e/JovianDSS-KubernetesCSI/pkg/joviandss"
 )
 
 func init() {
