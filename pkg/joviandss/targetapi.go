@@ -302,7 +302,7 @@ func (t *Target) DeleteSerialization() (err error) {
 // SetChapCred puts chap credantial to local db
 func (t *Target) SetChapCred() error {
 
-	exec := mount.NewOsExec()
+	exec := mount.NewOSExec()
 	tname := t.Iqn + ":" + t.Tname
 
 	t.l.Tracef("Target: %s", t.Tname)
@@ -334,7 +334,7 @@ func (t *Target) SetChapCred() error {
 // ClearChapCred sets chap credential to empty values
 func (t *Target) ClearChapCred() error {
 
-	exec := mount.NewOsExec()
+	exec := mount.NewOSExec()
 
 	tname := t.Iqn + ":" + t.Tname
 
@@ -356,7 +356,7 @@ func (t *Target) FormatMountVolume(req *csi.NodePublishVolumeRequest) error {
 	var msg string
 	m := mount.SafeFormatAndMount{
 		Interface: mount.New(""),
-		Exec:      mount.NewOsExec()}
+		Exec:      mount.NewOSExec()}
 
 	if exists, err := mount.PathExists(t.TPath); exists == false {
 		if err = os.MkdirAll(t.TPath, 0640); err != nil {
@@ -440,7 +440,7 @@ func (t *Target) StageVolume() error {
 	tname := t.Iqn + ":" + t.Tname
 
 	fullPortal := t.Portal + ":" + t.PortalPort
-	exec := mount.NewOsExec()
+	exec := mount.NewOSExec()
 
 	devicePath := strings.Join([]string{deviceIPPath, fullPortal, "iscsi", tname, "lun", t.Lun}, "-")
 
@@ -484,7 +484,7 @@ func (t *Target) UnStageVolume() error {
 	// Scan for targets
 
 	var msg string
-	exec := mount.NewOsExec()
+	exec := mount.NewOSExec()
 
 	tname := t.Iqn + ":" + t.Tname
 

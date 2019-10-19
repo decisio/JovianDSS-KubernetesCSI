@@ -1,5 +1,6 @@
 # Open-E JovianDSS Kubernetes CSI plugin
 
+[![Build Status](https://travis-ci.org/open-e/JovianDSS-KubernetesCSI.svg?branch=master)](https://travis-ci.org/open-e/JovianDSS-KubernetesCSI)
 [![Go Report Card](https://goreportcard.com/badge/github.com/open-e/JovianDSS-KubernetesCSI)](https://goreportcard.com/report/github.com/open-e/JovianDSS-KubernetesCSI)
 
 ## Deployment

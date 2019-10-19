@@ -23,7 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 
-	"JovianDSS-KubernetesCSI/pkg/rest"
+	"github.com/open-e/JovianDSS-KubernetesCSI/pkg/rest"
 )
 
 func init() {

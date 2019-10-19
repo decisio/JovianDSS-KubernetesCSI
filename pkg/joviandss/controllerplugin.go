@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"JovianDSS-KubernetesCSI/pkg/rest"
+	"github.com/open-e/JovianDSS-KubernetesCSI/pkg/rest"
 )
 
 const (
