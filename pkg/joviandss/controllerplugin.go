@@ -143,6 +143,20 @@ func GetControllerPlugin(cfg *ControllerCfg, l *logrus.Entry) (
 	return cp, nil
 }
 
+func (cp *ControllerPlugin) getStandardId(salt string, name string) string {
+
+	l := cp.l.WithFields(logrus.Fields{
+		"func": "getStandardId",
+	})
+
+	// Get universal volume ID
+	preID := []byte(salt + name)
+	rawID := sha256.Sum256(preID)
+	id := strings.ToLower(fmt.Sprintf("%X", rawID))
+	l.Trace("For %s id is %s", name, id)
+	return id
+}
+
 func (cp *ControllerPlugin) getRandomName(l int) (s string) {
 	var v int64
 	out := make([]byte, l)
@@ -353,7 +367,7 @@ func (cp *ControllerPlugin) createVolumeFromVolume(srcVol string, newVol string)
 	l := cp.l.WithFields(logrus.Fields{
 		"func": "createVolumeFromVolume",
 	})
-	l.Tracef("create %s from %s", newVol, srcVol)
+	l.Tracef("Create %s From %s", newVol, srcVol)
 
 	tmpSName, err := cp.createTmpSnapshot(srcVol)
 	if err != nil {
@@ -395,7 +409,10 @@ func (cp *ControllerPlugin) getVolumeSize(vname string) (int64, error) {
 
 // CreateVolume create volume with properties
 func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	cp.l.Tracef("Create volume ctx: %+v", ctx)
+	l := cp.l.WithFields(logrus.Fields{
+		"func": "CreateVolume",
+	})
+
 	var err error
 	out := csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
@@ -410,7 +427,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 	/// Checks
 	if false == cp.capSupported(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME) {
 		err = status.Errorf(codes.Internal, "Capability is not supported.")
-		cp.l.Warnf("Unable to create volume req: %v", req)
+		l.Warnf("Unable to create volume req: %v", req)
 		return nil, err
 	}
 	vName := req.GetName()
@@ -429,7 +446,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 	if volumeSize < minVolumeSize {
 		maxVSize := req.GetCapacityRange().GetLimitBytes()
-		cp.l.Tracef("Minimal volume size %d too small, using max val: %d", volumeSize, maxVSize)
+		l.Tracef("Minimal volume size %d too small, using max val: %d", volumeSize, maxVSize)
 		volumeSize = maxVSize
 	}
 
@@ -440,19 +457,17 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 		volumeSize = minVolumeSize
 	}
 
-	cp.l.Tracef("Create volume %+v of size %+v",
+	l.Tracef("Create volume %+v of size %+v",
 		vName,
 		volumeSize)
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	// Get universal volume ID
-	preID := []byte(cp.cfg.Salt + vName)
-	rawID := sha256.Sum256(preID)
-	volumeID := strings.ToLower(fmt.Sprintf("%X", rawID))
-
 	//////////////////////////////////////////////////////////////////////////////
 	// Check if volume exists
+
+	volumeID := cp.getStandardId(cp.cfg.Salt, vName)
+
 	v, err := cp.getVolume(volumeID)
 
 	if err != nil {
@@ -476,6 +491,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 			if _, err = cp.getSnapshot(sourceSnapshot); err != nil {
 				return nil, err
 			}
+			l.Tracef("Sopurce snapshot %s exists.", sourceSnapshot)
 
 		} else if srcVolume := vSource.GetVolume(); srcVolume != nil {
 			// Volume
@@ -484,6 +500,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 			if _, err = cp.getVolume(sourceVolume); err != nil {
 				return nil, err
 			}
+			cp.l.Tracef("Sopurce volume %s exists.", sourceVolume)
 		} else {
 			return nil, status.Errorf(codes.Unimplemented,
 				"Unable to create volume from other sources")
@@ -502,7 +519,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 			return nil, err
 		}
 		// Volume exists
-		cp.l.Tracef("Request for the same volume %s with size %d ", volumeID, vSize)
+		l.Tracef("Request for the same volume %s with size %d ", volumeID, vSize)
 
 		out.Volume.VolumeId = volumeID
 		out.Volume.CapacityBytes = volumeSize
@@ -511,7 +528,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	cp.l.Tracef("req: %+v ", req)
+	l.Tracef("req: %+v ", req)
 
 	// Create volume
 
@@ -522,6 +539,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 	var rErr rest.RestError
 
 	if len(sourceSnapshot) > 0 {
+		// from snapshot
 		err = cp.createVolumeFromSnapshot(sourceSnapshot, volumeID)
 		if err != nil {
 			return nil, err
@@ -537,10 +555,8 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return &out, nil
 
 	} else if len(sourceVolume) > 0 {
-
-		//TODO: create snapshot of existing volume
-
-		err = cp.createVolumeFromVolume(sourceSnapshot, volumeID)
+		// from volume
+		err = cp.createVolumeFromVolume(sourceVolume, volumeID)
 		if err != nil {
 			return nil, err
 		}
@@ -553,8 +569,6 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 		out.Volume.CapacityBytes = vSize
 
 		return &out, nil
-
-		//return nil, status.Errorf(codes.Unimplemented, "Unable to create volume from other volume")
 
 	} else {
 		rErr = (*cp.endpoints[0]).CreateVolume(vd)
@@ -570,7 +584,7 @@ func (cp *ControllerPlugin) CreateVolume(ctx context.Context, req *csi.CreateVol
 			return nil, err
 
 		case rest.RestObjectExists:
-			cp.l.Warn("Specified volume already exists.")
+			l.Warn("Specified volume already exists.")
 
 		default:
 			err = status.Errorf(codes.Internal, "Unknown internal error")
@@ -824,13 +838,14 @@ func (cp *ControllerPlugin) createTmpSnapshot(vname string) (*string, error) {
 		"func": "createTmpSnapshot",
 	})
 
-	var tmpSName string
+	var sname string
 
 	for i := 0; true; i++ {
-		tmpS := cp.getRandomName(10)
-		tmpSName = fmt.Sprintf("tmp-%s", tmpS)
+		sID := cp.getStandardId("", cp.getRandomName(10))
+		sname = fmt.Sprintf("%s_%s", vname, sID)
 
-		if _, err := cp.getSnapshot(tmpSName); err == nil {
+		if _, err := cp.getSnapshot(sname); status.Code(err) == codes.NotFound {
+			l.Warn(err.Error())
 			break
 		}
 		if i > 2 {
@@ -838,16 +853,16 @@ func (cp *ControllerPlugin) createTmpSnapshot(vname string) (*string, error) {
 		}
 	}
 
-	l.Tracef("volume %s snapshot %s", vname, tmpSName)
+	l.Tracef("Snapshot %s", sname)
 
-	rErr := (*cp.endpoints[0]).CreateSnapshot(vname, tmpSName)
+	rErr := (*cp.endpoints[0]).CreateSnapshot(vname, sname)
 	if rErr != nil {
-		(*cp.endpoints[0]).DeleteSnapshot(vname, tmpSName)
+		(*cp.endpoints[0]).DeleteSnapshot(vname, sname)
 
-		return nil, status.Error(codes.Internal, rErr.Error())
+		return nil, status.Error(codes.Internal, "Unable to create intermidiate snapshot")
 	}
 
-	return &tmpSName, nil
+	return &sname, nil
 }
 
 // CreateSnapshot creates snapshot
@@ -885,9 +900,8 @@ func (cp *ControllerPlugin) CreateSnapshot(ctx context.Context, req *csi.CreateS
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	preID := []byte(cp.cfg.Salt + sNameRaw)
-	rawID := sha256.Sum256(preID)
-	sID := strings.ToLower(fmt.Sprintf("%X", rawID))
+	sID := cp.getStandardId(cp.cfg.Salt, sNameRaw)
+
 	sname := fmt.Sprintf("%s_%s", vname, sID)
 
 	bExists := cp.getSnapshotRecordExists(sID)
@@ -1266,9 +1280,8 @@ func (cp *ControllerPlugin) ControllerPublishVolume(ctx context.Context, req *cs
 		msg := fmt.Sprintf("Volume id %s is incorrect", vname)
 		l.Warn(msg)
 		// Get universal volume ID
-		preID := []byte(cp.cfg.Salt + vname)
-		rawID := sha256.Sum256(preID)
-		vname = strings.ToLower(fmt.Sprintf("%X", rawID))
+		vname = cp.getStandardId(cp.cfg.Salt, vname)
+
 	}
 	// TODO: verify capabiolity
 	caps := req.GetVolumeCapability()
@@ -1560,6 +1573,7 @@ func (cp *ControllerPlugin) capSupported(c csi.ControllerServiceCapability_RPC_T
 	return false
 }
 
+//TODO: remove this
 /*
 func (cp *ControllerPlugin) AddControllerServiceCapabilities(
 	cl []csi.ControllerServiceCapability_RPC_Type) {

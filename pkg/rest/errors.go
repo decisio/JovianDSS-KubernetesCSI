@@ -56,7 +56,7 @@ func (err *restError) Error() (out string) {
 	switch (*err).code {
 
 	case RestResourceBusy:
-		out = fmt.Sprint("Resource is busy. %s", err.msg)
+		out = fmt.Sprintf("Resource is busy. %s", err.msg)
 
 	case RestRequestMalfunction:
 		out = fmt.Sprintf("Malfunction: %s", err.msg)
