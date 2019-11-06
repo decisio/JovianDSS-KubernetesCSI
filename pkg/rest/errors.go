@@ -27,7 +27,7 @@ const (
 	RestRequestMalfunction    = 3
 	RestResourceDNE           = 4
 	RestUnableToConnect       = 5
-	RestRPM                   = 6 // Response Processing malfunction
+	RestRPM                   = 6 // Response Processing Malfunction
 	RestStorageFailureUnknown = 7
 	RestObjectExists          = 8
 )
@@ -59,12 +59,18 @@ func (err *restError) Error() (out string) {
 		out = fmt.Sprintf("Resource is busy. %s", err.msg)
 
 	case RestRequestMalfunction:
-		out = fmt.Sprintf("Malfunction: %s", err.msg)
+		out = fmt.Sprintf("Failure in sending data to storage: %s", err.msg)
 
 	case RestRPM:
-		out = fmt.Sprintf("Failure during processing response from server: %s", err.msg)
+		out = fmt.Sprintf("Failure during processing response from storage: %s", err.msg)
+	case RestResourceDNE:
+		out = fmt.Sprintf("Resource %s do not exists", err.msg)
 	case RestObjectExists:
+
 		out = fmt.Sprintf("Object exists: %s", err.msg)
+
+	case RestStorageFailureUnknown:
+		out = fmt.Sprintf("Storage failes with unknown error: %s", err.msg)
 
 	default:
 		out = fmt.Sprint("Unknown internal Error. %s", err.msg)

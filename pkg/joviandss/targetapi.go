@@ -305,25 +305,25 @@ func (t *Target) SetChapCred() error {
 	exec := mount.NewOSExec()
 	tname := t.Iqn + ":" + t.Tname
 
-	t.l.Tracef("Target: %s", t.Tname)
+	t.l.Tracef("Target: %s", tname)
 
-	out, err := exec.Run("iscsiadm", "-m", "node", "-p", t.Portal,
-		"-T", tname, "-o", "update",
-		"-n", "node.session.auth.authmethod", "-v", "CHAP")
+	cmd := fmt.Sprintf("iscsiadm -m node -p %s -T %s -o update -n node.session.auth.authmethod -v CHAP",
+		t.Portal, tname)
+	out, err := exec.Run("sudo", "bash", "-c", cmd)
 	if err != nil {
 		t.l.Errorf("Could not update authentication method for %s error: %s", tname, string(out))
 		return err
 	}
 
-	out, err = exec.Run("iscsiadm", "-m", "node", "-p", t.Portal,
-		"-T", tname, "-o", "update",
-		"-n", "node.session.auth.username", "-v", t.CoUser)
+	cmd = fmt.Sprintf("iscsiadm -m node -p %s -T %s -o update -n node.session.auth.username -v %s",
+		t.Portal, tname, t.CoUser)
+	out, err = exec.Run("sudo", "bash", "-c", cmd)
 	if err != nil {
 		return fmt.Errorf("iscsi: failed to update node session user error: %v", string(out))
 	}
-	out, err = exec.Run("iscsiadm", "-m", "node", "-p", t.Portal,
-		"-T", tname, "-o", "update",
-		"-n", "node.session.auth.password", "-v", t.CoPass)
+	cmd = fmt.Sprintf("iscsiadm -m node -p %s -T %s -o update -n node.session.auth.password -v %s",
+		t.Portal, tname, t.CoPass)
+	out, err = exec.Run("sudo", "bash", "-c", cmd)
 	if err != nil {
 		return fmt.Errorf("iscsi: failed to update node session password error: %v", string(out))
 	}
@@ -444,22 +444,30 @@ func (t *Target) StageVolume() error {
 
 	devicePath := strings.Join([]string{deviceIPPath, fullPortal, "iscsi", tname, "lun", t.Lun}, "-")
 
-	exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "-o", "new")
+	//out, err := exec.Run("iscsiadm", "-m", "node", "-p", t.Portal, "-T", tname, "-o", "new")
+	cmd := fmt.Sprintf("iscsiadm -m node -p %s -T %s -o new", t.Portal, tname)
+	out, err := exec.Run("sudo", "bash", "-c", cmd)
+	if err != nil {
+		msg := fmt.Sprintf("Unable to add targetation %s error: %s", tname, string(out))
+		return errors.New(msg)
+	}
+	//exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "-o", "new")
 
-	exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "--discover")
+	//exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", t.Portal, "--discover")
 
-	exec.Run("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", t.Portal)
+	//exec.Run("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", t.Portal)
 
 	// Set properties
 
-	err := t.SetChapCred()
+	err = t.SetChapCred()
 	if err != nil {
 		msg := fmt.Sprintf("iscsi: failed to update iscsi node to portal %s error: %v", tname, err)
 		return errors.New(msg)
 	}
 
 	//Attach Target
-	out, err := exec.Run("iscsiadm", "-m", "node", "-p", t.Portal, "-T", tname, "--login")
+	cmd = fmt.Sprintf("iscsiadm -m node -p %s -T %s --login", t.Portal, tname)
+	out, err = exec.Run("sudo", "bash", "-c", cmd)
 	if err != nil {
 		t.ClearChapCred()
 		exec.Run("iscsiadm", "-m", "node", "-p", t.Portal, "-T", tname, "-o", "delete")

@@ -61,7 +61,7 @@ func main() {
 
 	status, body, err := rproxy.Send("GET", "api/v3/pools", nil, rest.GetPoolsRCode)
 
-	var gprsp = &rest.GetPoolsData{}
+	gprsp := &rest.GetPoolsData{}
 	if err := json.Unmarshal(body, &gprsp); err != nil {
 		panic(err)
 	}

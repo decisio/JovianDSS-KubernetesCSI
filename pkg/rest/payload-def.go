@@ -39,9 +39,9 @@ type ErrorData struct {
 
 // IOStats data on input ourput statistics
 type IOStats struct {
-	Read   string
-	Write  string
-	chksum string
+	Read   string `json:"read"`
+	Write  string `json:"write"`
+	chksum string `json:"chksum"`
 }
 
 // Disk structure returned by server
@@ -72,8 +72,38 @@ type Enabled struct {
 	Enabled bool
 }
 
+///////////////////////////////////////////////////////////////////////////////
+/// Pool
+
+type PoolEnabled struct {
+	Enabled bool `enabled:"enabled"`
+}
+
 // Pool response structure
 type Pool struct {
+	Available  string      `json: "available"`
+	Status     int         `json:"status"`
+	Name       string      `json:"name": "Pool-0"`
+	Scan       int         `json:"scan"`
+	Encryption PoolEnabled `json:"encryption"`
+	Iostats    IOStats     `json:"iostats"`
+	Vdevs      []VDevice   `json:"vdevs"`
+	Health     string      `json:"health"`
+	Operation  string      `json:"operation"`
+	ID         string      `json:"id"`
+	Size       string      `json:"size"`
+}
+
+// GetPoolData response mask
+type GetPoolData struct {
+	Data  Pool
+	Error ErrorT
+}
+
+const GetPoolRCode = 200
+
+// PoolShort element of a pool list
+type PoolShort struct {
 	Name       string
 	Status     int
 	Health     string
@@ -86,7 +116,7 @@ type Pool struct {
 
 // GetPoolsData response mask
 type GetPoolsData struct {
-	Data  []Pool
+	Data  []PoolShort
 	Error ErrorT
 }
 
@@ -98,13 +128,13 @@ const GetPoolsRCode = 200
 
 // Volume response structure
 type Volume struct {
-	Origin               string
-	Reference            string
-	primarycache         string
-	Logbias              string
-	Creation             string
-	Sync                 string
-	Is_clone             bool
+	Origin               string `json:"origin"`
+	Reference            string `json:"referencce"`
+	Primarycache         string `json:"primarycache"`
+	Logbias              string `json:"logbias"`
+	Creation             string `json:"creation"`
+	Sync                 string `json:"sync"`
+	IsClone              bool   `json:"is_clone"`
 	Dedup                string
 	Used                 string
 	Full_name            string
@@ -260,6 +290,7 @@ type SnapshotProperties struct {
 type SnapshotShort struct {
 	Volume     string
 	Name       string
+	Clones     string
 	Properties SnapshotProperties
 }
 
@@ -354,7 +385,7 @@ type DeleteCloneData struct {
 }
 
 // DeleteCloneRCode success status code
-const DeleteCloneRCode = 200
+const DeleteCloneRCode = 204
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Promote cloned volume
@@ -371,6 +402,31 @@ type PromoteCloneData struct {
 
 // PromoteCloneRCode success status code
 const PromoteCloneRCode = 200
+
+///////////////////////////////////////////////////////////////////////////////
+// Get Target
+
+type Target struct {
+	IncomingUsersActive bool     `json:"incoming_users_active"`
+	Name                string   `json:"name"`
+	AllowIP             []string `json:"allow_ip"`
+	OutgoingUser        string   `json:"outgoing_user"`
+	Active              bool     `json:"active"`
+	Conflicted          bool     `json:"conflicted"`
+	DenyIP              []string `json:"deny_ip"`
+}
+
+//GetTargetData data
+type GetTargetData struct {
+	Data  Target
+	Error ErrorT
+}
+
+// GetTargetRCode success status code
+const GetTargetRCode = 200
+
+// GetTargetRCode success status code
+const GetTargetRCodeDoNotExists = 404
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Create Target
