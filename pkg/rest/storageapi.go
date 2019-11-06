@@ -75,17 +75,57 @@ func (s *Storage) GetAddress() (string, int) {
 
 }
 
-//TODO: implement this
-func (s *Storage) GetPools() ([]Pool, error) {
-	var ps = []Pool{}
+///////////////////////////////////////////////////////////////////////////////
+// Pools
+
+func (s *Storage) GetPool() (*Pool, RestError) {
+	l := s.l.WithFields(logrus.Fields{
+		"func": "GetPool",
+	})
+	msg := fmt.Sprintf("Getting pool %s", s.pool)
+	l.Trace(msg)
+	addr := fmt.Sprintf("api/v3/pools/%s", s.pool)
+	stat, body, err := s.rp.Send("GET", addr, nil, GetPoolRCode)
+	if err != nil {
+		msg := fmt.Sprintf("Internal failure in communication with storage %s.", s.addr)
+		l.Warn(msg)
+		return nil, GetError(RestRequestMalfunction, msg)
+	}
+
+	switch stat {
+	case 500:
+		return nil, GetError(RestResourceDNE, addr)
+	case GetPoolRCode:
+	default:
+		return nil, GetError(RestFailureUnknown, addr)
+	}
+
+	var poolData GetPoolData
+	if err := json.Unmarshal(body, &poolData); err != nil {
+		return nil, GetError(RestRPM, fmt.Sprintf("Error %s for %s", err.Error(), string(body[:len(body)])))
+	}
+
+	return &poolData.Data, nil
+}
+
+// GetPools return list of pools
+func (s *Storage) GetPools() ([]PoolShort, error) {
+	l := s.l.WithFields(logrus.Fields{
+		"func": "GetPools",
+	})
+	var ps = []PoolShort{}
 	stat, body, err := s.rp.Send("GET", "api/v3/pools", nil, GetPoolsRCode)
+	if err != nil {
+		msg := fmt.Sprintf("Internal failure in communication with storage %s.", s.addr)
+		l.Warn(msg)
+		return nil, GetError(RestRequestMalfunction, msg)
+	}
 
 	if stat != GetPoolsRCode {
 		return nil, err
 	}
 
-	//var dat map[string]interface{}
-	var rsp = &GetPoolsData{}
+	var rsp GetPoolsData
 	if err := json.Unmarshal(body, &rsp); err != nil {
 		panic(err)
 	}
@@ -179,7 +219,7 @@ func (s *Storage) CreateVolume(vdesc CreateVolumeDescriptor) RestError {
 
 	}
 
-	s.l.Trace(fmt.Sprintf("Unable to create volume: %s", string(body[:len(body)])))
+	s.l.Tracef(fmt.Sprintf("Unable to create volume: %s", string(body[:len(body)])))
 
 	errData, er := s.getError(body)
 
@@ -207,7 +247,10 @@ func (s *Storage) CreateVolume(vdesc CreateVolumeDescriptor) RestError {
 	return nil
 }
 
-func (s *Storage) DeleteVolume(vname string) RestError {
+// DeleteVolume delete volume, fails if it has snapshots
+//
+// set rSnapshots to true in order to delete snapshots
+func (s *Storage) DeleteVolume(vname string, rSnapshots bool) RestError {
 	var err error
 	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s", s.pool, vname)
 
@@ -215,6 +258,9 @@ func (s *Storage) DeleteVolume(vname string) RestError {
 		RecursivelyChildren:   false,
 		RecursivelyDependents: false,
 		ForceUmount:           false,
+	}
+	if rSnapshots == true {
+		data.RecursivelyChildren = true
 	}
 
 	stat, body, err := s.rp.Send("DELETE", addr, data, DeleteVolumeRCode)
@@ -374,18 +420,14 @@ func (s *Storage) CreateSnapshot(vname string, sname string) RestError {
 
 	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s/snapshots", s.pool, vname)
 
-	l.Trace("Addr: %s", addr)
 	stat, body, err := s.rp.Send("POST", addr, data, CreateSnapshotRCode)
 
 	if err != nil {
-		msg := fmt.Sprintf("Internal failure in communication with storage %s.", s.addr)
-		l.Warn(msg)
-		return GetError(RestRequestMalfunction, msg)
+		return GetError(RestRequestMalfunction, addr)
 	}
 
 	// Request is OK, exiting
 	if stat == CreateSnapshotRCode {
-
 		return nil
 	}
 
@@ -439,14 +481,11 @@ func (s *Storage) DeleteSnapshot(vname string, sname string) RestError {
 	stat, body, err := s.rp.Send("DELETE", addr, data, DeleteSnapshotRCode)
 
 	if err != nil {
-		msg := fmt.Sprintf("Internal failure in communication with storage %s.", s.addr)
-		l.Warn(msg)
-		return GetError(RestRequestMalfunction, msg)
+		return GetError(RestRequestMalfunction, addr)
 	}
 
 	// Request is OK, exiting
 	if stat == DeleteSnapshotRCode {
-
 		return nil
 	}
 
@@ -495,41 +534,40 @@ func (s *Storage) ListAllSnapshots(f func(string) bool) ([]SnapshotShort, RestEr
 	stat, body, err := s.rp.Send("GET", addr, nil, GetAllSnapshotsRCode)
 
 	if err != nil {
-		msg := fmt.Sprintf("Internal failure in communication with storage %s.", s.addr)
-		s.l.Warn(msg)
-		return nil, GetError(RestRequestMalfunction, msg)
+		return nil, GetError(RestRequestMalfunction, addr)
 	}
 
+	// error handling
 	if stat != GetAllSnapshotsRCode {
-		errData, errC := s.getError(body)
-		if errC != nil {
-			msg := fmt.Sprintf("Data: %s, Err: %+v.", string(body[:len(body)]), errC)
-			rErr := GetError(RestRPM, msg)
-
-			s.l.Warn(rErr.Error())
-			return nil, rErr
-
+		var errData *ErrorT
+		var errC error
+		if errData, errC = s.getError(body); errC != nil {
+			return nil, GetError(RestRPM, string(body[:len(body)]))
 		}
-		msg := fmt.Sprintf("Internal failure during volume listing, error: %+v.", errData.Message)
-		s.l.Warn(msg)
-		return nil, GetError(RestRequestMalfunction, msg)
+
+		msg := fmt.Sprintf(
+			"request to %s failed with %+v",
+			addr,
+			*errData)
+		return nil, GetError(RestStorageFailureUnknown, msg)
 	}
 
+	// data extraction
 	var rsp = &GetAllSnapshotsData{}
 	if errC := json.Unmarshal(body, &rsp); errC != nil {
-		msg := fmt.Sprintf("Data: %s, Err: %+v.", string(body[:len(body)]), errC)
+		msg := fmt.Sprintf(
+			"Unable to unmarshal: %s, Err: %+v.",
+			string(body[:len(body)]),
+			errC)
 		rErr := GetError(RestRPM, msg)
-
-		s.l.Warn(rErr.Error())
 		return nil, rErr
-
 	}
-
+	// no snapshots
 	if rsp.Data.Results <= 0 {
 		return nil, nil
 	}
+
 	var out []SnapshotShort
-	//:= make([]string, rsp.Data.Results)
 	s.l.Debugf("Entries: %+v", rsp.Data.Entries)
 
 	for _, se := range rsp.Data.Entries {
@@ -550,38 +588,42 @@ func (s *Storage) ListVolumeSnapshots(vname string, f func(string) bool) ([]Snap
 	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s/snapshots", s.pool, vname)
 
 	stat, body, err := s.rp.Send("GET", addr, nil, GetVolSnapshotsRCode)
-
 	if err != nil {
-		msg := fmt.Sprintf("Internal failure in communication with storage %s.", s.addr)
-		s.l.Warn(msg)
-		return nil, GetError(RestRequestMalfunction, msg)
+		return nil, GetError(RestRequestMalfunction, addr)
 	}
+
 	if stat != GetVolSnapshotsRCode {
 		errData, errC := s.getError(body)
 		if errC != nil {
-			msg := fmt.Sprintf("Data: %s, Err: %+v.", string(body[:len(body)]), errC)
-			rErr := GetError(RestRPM, msg)
+			msg := GetError(
+				RestRPM,
+				fmt.Sprintf(
+					"%s, Data %s, Err %s",
+					addr,
+					string(body[:len(body)]),
+					errC))
 
-			s.l.Warn(rErr.Error())
-			return nil, rErr
-
+			return nil, msg
 		}
-		msg := fmt.Sprintf("Internal failure during volume listing, error: %+v.", errData.Message)
-		s.l.Warn(msg)
-		return nil, GetError(RestRequestMalfunction, msg)
+		if errData.Class == "zfslib.zfsapi.resources.ZfsResourceError" {
+			return nil, GetError(RestResourceDNE, addr)
+		}
+		msg := fmt.Sprintf("%s, Data %s", addr, errData.Message)
+		return nil, GetError(RestStorageFailureUnknown, msg)
 	}
 
 	var rsp = &GetVolSnapshotsData{}
 	if errC := json.Unmarshal(body, &rsp); errC != nil {
-		msg := fmt.Sprintf("Data: %s, Err: %+v.", string(body[:len(body)]), errC)
-		rErr := GetError(RestRPM, msg)
-
-		s.l.Warn(rErr.Error())
-		return nil, rErr
-
+		msg := fmt.Sprintf(
+			"%s Data: %s, Err: %+v.",
+			addr,
+			string(body[:len(body)]),
+			errC)
+		return nil, GetError(RestRPM, msg)
 	}
 
-	var i int
+	// prepare response data
+	var i int64
 	i = 0
 
 	if rsp.Data.Results <= 0 {
@@ -603,6 +645,7 @@ func (s *Storage) ListVolumeSnapshots(vname string, f func(string) bool) ([]Snap
 		ss := SnapshotShort{
 			Volume:     vname,
 			Name:       se.Name,
+			Clones:     se.Clones,
 			Properties: SnapshotProperties{strconv.FormatInt(timeStamp, 10)},
 		}
 		out = append(out, ss)
@@ -612,11 +655,10 @@ func (s *Storage) ListVolumeSnapshots(vname string, f func(string) bool) ([]Snap
 	return out, nil
 }
 
+// CreateClone creates clone of a volume from snapshot
 func (s *Storage) CreateClone(vname string, sname string, cname string) RestError {
-	// TODO: implement 2 policy : return clones and return promoted volumes
-
 	l := s.l.WithFields(logrus.Fields{
-		"func": "Create Volume From Snapshot",
+		"func": "CreateClone",
 	})
 
 	// Clone
@@ -626,8 +668,8 @@ func (s *Storage) CreateClone(vname string, sname string, cname string) RestErro
 		Snapshot: sname,
 	}
 	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s/clone", s.pool, vname)
-
-	l.Trace("Creating clone of snapshot %s  volume: %s", sname, vname)
+	msg := fmt.Sprintf("Creating clone of snapshot %s  volume: %s", sname, vname)
+	l.Trace(msg)
 	stat, body, err := s.rp.Send("POST", addr, data, CreateCloneRCode)
 
 	if err != nil {
@@ -644,7 +686,7 @@ func (s *Storage) CreateClone(vname string, sname string, cname string) RestErro
 
 	if er != nil {
 		msg := fmt.Sprintf("Unable to extract err message %+v", er)
-		s.l.Warn(msg)
+		l.Warn(msg)
 		return GetError(RestRequestMalfunction, msg)
 	}
 
@@ -652,9 +694,10 @@ func (s *Storage) CreateClone(vname string, sname string, cname string) RestErro
 
 	case 1:
 		msg := fmt.Sprintf("Clone %s doesn't exist", cname)
-		s.l.Warn(msg)
 		return GetError(RestResourceDNE, msg)
-
+	case 100:
+		msg := fmt.Sprintf("Target volume %s already exists", cname)
+		return GetError(RestObjectExists, msg)
 	default:
 		msg := fmt.Sprintf("Unknown error %d, %s",
 			(*errData).Errno,
@@ -684,8 +727,8 @@ func (s *Storage) DeleteClone(
 		ForceUmount:           false,
 	}
 	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s/snapshots/%s/clones/%s", s.pool, vname, sname, cname)
-
-	l.Trace("Deleting clone of snapshot %s  volume: %s", sname, vname)
+	msg := fmt.Sprintf("Deleting clone of snapshot %s  volume: %s", sname, vname)
+	l.Trace(msg)
 	stat, body, err := s.rp.Send("DELETE", addr, data, CreateCloneRCode)
 
 	if err != nil {
@@ -694,7 +737,7 @@ func (s *Storage) DeleteClone(
 		return GetError(RestRequestMalfunction, msg)
 	}
 
-	if stat == CreateTargetRCode {
+	if stat == DeleteCloneRCode {
 		return nil
 	}
 
@@ -712,7 +755,10 @@ func (s *Storage) DeleteClone(
 		msg := fmt.Sprintf("Clone %s doesn't exist", cname)
 		s.l.Warn(msg)
 		return GetError(RestResourceDNE, msg)
-
+	case 1000:
+		msg := fmt.Sprintf("Clone %s may have snapshots", cname)
+		s.l.Warn(msg)
+		return GetError(RestResourceBusy, msg)
 	default:
 		msg := fmt.Sprintf("Unknown error %d, %s",
 			(*errData).Errno,
@@ -728,13 +774,13 @@ func (s *Storage) DeleteClone(
 func (s *Storage) PromoteClone(vname string, sname string, cname string) RestError {
 
 	l := s.l.WithFields(logrus.Fields{
-		"func": "Create Volume From Snapshot",
+		"func": "PromoteClone",
 	})
 
 	// Promote
 	addr := fmt.Sprintf("api/v3/pools/%s/volumes/%s/snapshots/%s/clones/%s/promote", s.pool, vname, sname, cname)
-
-	l.Trace("Promoting clone %s", cname)
+	msg := fmt.Sprintf("Promoting clone %s", cname)
+	l.Trace(msg)
 	stat, body, err := s.rp.Send("POST", addr, nil, CreateTargetRCode)
 
 	if err != nil {
@@ -771,6 +817,42 @@ func (s *Storage) PromoteClone(vname string, sname string, cname string) RestErr
 	}
 
 	return nil
+}
+
+func (s *Storage) GetTarget(tname string) (*Target, RestError) {
+	l := s.l.WithFields(logrus.Fields{
+		"func": "GetTarget",
+	})
+	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s", s.pool, tname)
+	l.Tracef(fmt.Sprintf("Getting target %s information", tname))
+	stat, body, err := s.rp.Send("GET", addr, nil, GetTargetRCode)
+
+	if err != nil {
+		msg := fmt.Sprintf("Internal failure in communication with storage %s.", s.addr)
+		l.Warn(msg)
+		return nil, GetError(RestRequestMalfunction, msg)
+	}
+
+	switch stat {
+	case GetTargetRCode:
+	case GetTargetRCodeDoNotExists:
+		return nil, GetError(RestResourceDNE, addr)
+	default:
+		return nil, GetError(RestStorageFailureUnknown, addr)
+
+	}
+
+	var rsp = &GetTargetData{}
+	if errC := json.Unmarshal(body, &rsp); errC != nil {
+		msg := fmt.Sprintf(
+			"%s Data: %s, Err: %+v.",
+			addr,
+			string(body[:len(body)]),
+			errC)
+		return nil, GetError(RestRPM, msg)
+	}
+
+	return &rsp.Data, nil
 }
 
 func (s *Storage) CreateTarget(tname string) RestError {
@@ -839,7 +921,7 @@ func (s *Storage) DeleteTarget(tname string) RestError {
 
 	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s", s.pool, tname)
 
-	l.Trace("Deleating targets for volume: %s", tname)
+	l.Trace(fmt.Sprintf("Deleating targets for volume: %s", tname))
 	stat, body, err := s.rp.Send("DELETE", addr, nil, DeleteTargetRCode)
 
 	if err != nil {
@@ -905,7 +987,7 @@ func (s *Storage) AttachToTarget(tname string,
 
 	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s/luns", s.pool, tname)
 
-	l.Trace(fmt.Sprintf("Attaching volume to target: %s", tname))
+	l.Tracef(fmt.Sprintf("Attaching volume to target: %s", tname))
 	stat, body, err := s.rp.Send("POST", addr, data, AttachToTargetRCode)
 
 	if err != nil {
@@ -957,7 +1039,8 @@ func (s *Storage) DettachFromTarget(tname string, vname string) RestError {
 
 	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s/luns/%s", s.pool, tname, vname)
 
-	l.Trace("Detach volume from target: %s", tname)
+	msg := fmt.Sprintf("Detach volume from target: %s", tname)
+	l.Tracef(msg)
 	stat, body, err := s.rp.Send("DELETE", addr, nil, AttachToTargetRCode)
 
 	if err != nil {
@@ -1022,7 +1105,7 @@ func (s *Storage) AddUserToTarget(tname string,
 
 	addr := fmt.Sprintf("api/v3/pools/%s/san/iscsi/targets/%s/incoming-users", s.pool, tname)
 
-	l.Trace("Set CHAP user for tartget: %s", tname)
+	l.Tracef("Set CHAP user for tartget: %s", tname)
 	stat, body, err := s.rp.Send("POST", addr, data, AddUserToTargetRCode)
 
 	if err != nil {

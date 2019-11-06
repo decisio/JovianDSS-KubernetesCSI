@@ -216,6 +216,7 @@ func (ns *NodePlugin) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 
 }
 
+// NodeGetVolumeStats volume total and available space
 func (np *NodePlugin) NodeGetVolumeStats(ctx context.Context, in *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
