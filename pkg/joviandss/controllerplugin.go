@@ -1281,8 +1281,23 @@ func (cp *ControllerPlugin) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 
 	//////////////////////////////////////////////////////////////////////////////
 
-	// Clean snapshot record
-	cp.delSnapshotRecord(snameT[1])
+	snap, err := cp.getSnapshot(sname)
+
+	if err != nil {
+
+		if codes.NotFound == grpc.Code(err) {
+			msg := fmt.Sprintf("Snapshot already deleted %s", sname)
+
+			l.Trace(msg)
+			return &csi.DeleteSnapshotResponse{}, nil
+		}
+	}
+
+	if len(snap.Clones) > 0 {
+		msg := fmt.Sprintf("Snapshot %s is a parent of %s", sname, snap.Clones)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+
+	}
 
 	rErr := (*cp.endpoints[0]).DeleteSnapshot(vname, sname)
 
@@ -1301,7 +1316,6 @@ func (cp *ControllerPlugin) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 			return nil, err
 
 		case rest.RestResourceDNE:
-			return &csi.DeleteSnapshotResponse{}, nil
 
 		default:
 			err = status.Errorf(codes.Internal, "Unknown internal error")
@@ -1309,19 +1323,10 @@ func (cp *ControllerPlugin) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 		}
 	}
 
-	_, err = cp.getSnapshot(sname)
+	// Clean snapshot record
+	cp.delSnapshotRecord(snameT[1])
 
-	if err != nil {
-
-		if codes.NotFound == grpc.Code(err) {
-			msg := fmt.Sprintf("Snapshot deleted %s", sname)
-
-			cp.l.Trace(msg)
-			return &csi.DeleteSnapshotResponse{}, nil
-		}
-	}
-
-	return nil, status.Errorf(codes.Internal, "Unable to delete snapshot %s", sname)
+	return &csi.DeleteSnapshotResponse{}, nil
 
 }
 
