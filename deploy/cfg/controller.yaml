@@ -4,6 +4,8 @@ plugins :
     - CONTROLLER_SERVICE # init controller service
     - IDENTITY_SERVICE
 
+version: alpha
+
 controller :
     id: node-1
     salt: some-salt

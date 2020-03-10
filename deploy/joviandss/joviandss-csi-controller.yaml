@@ -128,7 +128,7 @@ spec:
             - --config=$(JOVIANDSS_CONFIG)
           env:
             - name: JOVIANDSS_CONFIG
-              value: /config/controller-cfg.yaml
+              value: /config/controller.yaml
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

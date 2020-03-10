@@ -79,7 +79,7 @@ spec:
           args:
             - --csi-address=/csi/csi.sock
             - --soc-type=unix
-            - --config=/config/node-cfg.yaml
+            - --config=/config/node.yaml
             - --nodeid=$(KUBE_NODE_NAME)
           env:
             - name: KUBE_NODE_NAME
